@@ -11,12 +11,14 @@ interface UseGreenApiPollingProps {
     idMessage: string,
     timestamp: number
   ) => void;
+  onInstanceWidDetected?: (wid: string) => void;
   enabled?: boolean;
 }
 
 export function useGreenApiPolling({
   credentials,
   onMessageReceived,
+  onInstanceWidDetected,
   enabled = true,
 }: UseGreenApiPollingProps) {
   const [isPolling, setIsPolling] = useState<boolean>(false);
@@ -31,6 +33,9 @@ export function useGreenApiPolling({
 
   const onMessageReceivedRef = useRef(onMessageReceived);
   onMessageReceivedRef.current = onMessageReceived;
+
+  const onInstanceWidDetectedRef = useRef(onInstanceWidDetected);
+  onInstanceWidDetectedRef.current = onInstanceWidDetected;
 
   // Track run generation to avoid race conditions with unmounted/stale loops
   const runGenerationRef = useRef<number>(0);
@@ -55,6 +60,11 @@ export function useGreenApiPolling({
       }
 
       setLastNotificationType(notification.body.typeWebhook || 'unknown');
+
+      // Check if instanceData.wid is provided
+      if (notification.body.instanceData?.wid && onInstanceWidDetectedRef.current) {
+        onInstanceWidDetectedRef.current(notification.body.instanceData.wid);
+      }
 
       // 2. Extract message data if this is an incoming message
       const msg = extractMessageFromNotification(notification.body);

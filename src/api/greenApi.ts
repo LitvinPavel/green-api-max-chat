@@ -5,6 +5,7 @@ import {
   ReceiveNotificationResponse,
   DeleteNotificationResponse,
   NotificationBody,
+  WaSettingsResponse,
 } from '@/types';
 
 /**
@@ -47,6 +48,36 @@ export class GreenApiClient {
     }
 
     return response.json();
+  }
+
+  /**
+   * Retrieve WhatsApp/MAX account settings (phone number, avatar, device, state)
+   * Method: GET https://api.green-api.com/waInstance{{idInstance}}/getWaSettings/{{apiTokenInstance}}
+   * Returns null safely if not supported or error
+   */
+  static async getWaSettings(credentials: ApiCredentials): Promise<WaSettingsResponse | null> {
+    try {
+      const url = `${buildBaseUrl(credentials)}/getWaSettings/${credentials.apiTokenInstance.trim()}`;
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const text = await response.text();
+      if (!text || text.trim() === '' || text.trim() === 'null') {
+        return null;
+      }
+
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -191,3 +222,14 @@ export function extractMessageFromNotification(body: NotificationBody): {
 
   return null;
 }
+
+/**
+ * Extracts instance WhatsApp ID (wid) from notification if present
+ */
+export function extractInstanceWidFromNotification(body: NotificationBody): string | null {
+  if (body?.instanceData?.wid) {
+    return body.instanceData.wid;
+  }
+  return null;
+}
+

@@ -6,6 +6,7 @@ import {
   chatIdToPhone,
   formatPhoneDisplay,
   getAvatarColor,
+  cleanPhoneNumber,
 } from '@/utils/formatters';
 
 const STORAGE_KEYS = {
@@ -13,6 +14,7 @@ const STORAGE_KEYS = {
   CHATS: 'green_api_chats_v1',
   MESSAGES: 'green_api_messages_v1',
   ACTIVE_CHAT: 'green_api_active_chat_v1',
+  THEME: 'green_api_theme_v1',
 };
 
 export function useChatState() {
@@ -55,11 +57,31 @@ export function useChatState() {
     }
   });
 
+  const [theme, setTheme] = useState<'dark' | 'light'>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.THEME);
+      return saved === 'light' ? 'light' : 'dark';
+    } catch {
+      return 'dark';
+    }
+  });
+
   const [instanceStatus, setInstanceStatus] = useState<string>('unknown');
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(!credentials);
   const [isNewChatModalOpen, setIsNewChatModalOpen] = useState<boolean>(false);
+  const [isInstanceInfoOpen, setIsInstanceInfoOpen] = useState<boolean>(false);
   const [isSending, setIsSending] = useState<boolean>(false);
   const [sendError, setSendError] = useState<string | null>(null);
+
+  // Sync theme
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.THEME, theme);
+    document.documentElement.setAttribute('data-theme', theme);
+  }, [theme]);
+
+  const toggleTheme = useCallback(() => {
+    setTheme((prev) => (prev === 'dark' ? 'light' : 'dark'));
+  }, []);
 
   // Sync state to localStorage
   useEffect(() => {
@@ -88,7 +110,7 @@ export function useChatState() {
 
   const lastCheckTimestampRef = useRef<number>(0);
 
-  // Check instance status on login/start
+  // Check instance status on login/start and fetch profile
   const checkStatus = useCallback(async (creds: ApiCredentials, force: boolean = false) => {
     const now = Date.now();
     // Don't re-check more often than once every 30 seconds unless forced
@@ -101,8 +123,32 @@ export function useChatState() {
       const res = await GreenApiClient.getStateInstance(creds);
       if (res && res.stateInstance) {
         setInstanceStatus(res.stateInstance);
-        return res.stateInstance;
       }
+
+      // Proactively fetch account profile info (phone, avatar, name)
+      try {
+        const wa = await GreenApiClient.getWaSettings(creds);
+        if (wa && (wa.phone || wa.avatar || wa.name)) {
+          setCredentialsState((prev) => {
+            if (!prev) return prev;
+            return {
+              ...prev,
+              profile: {
+                ...prev.profile,
+                phone: wa.phone ? cleanPhoneNumber(wa.phone) : prev.profile?.phone,
+                avatarUrl: wa.avatar || prev.profile?.avatarUrl,
+                name: wa.name || prev.profile?.name,
+                tariff: prev.profile?.tariff || 'MAX_DEVELOPER',
+                expirationDate: prev.profile?.expirationDate || '01.01.2030',
+              },
+            };
+          });
+        }
+      } catch {
+        // Non-critical, ignore if unsupported
+      }
+
+      return res?.stateInstance;
     } catch (err: any) {
       if (String(err?.message || '').includes('429')) {
         // Rate limit exceeded - keep previous status if known or set rate-limited
@@ -119,6 +165,44 @@ export function useChatState() {
       checkStatus(credentials).catch(() => {});
     }
   }, [credentials, checkStatus]);
+
+  // Reactive detection of user's own phone for "Избранное"
+  useEffect(() => {
+    const myPhone = credentials?.profile?.phone ? cleanPhoneNumber(credentials.profile.phone) : '';
+    if (!myPhone) return;
+
+    setChats((prev) =>
+      prev.map((c) => {
+        const phone = cleanPhoneNumber(c.phoneNumber);
+        if (phone === myPhone && (!c.isSelf || c.displayName !== 'Избранное')) {
+          return {
+            ...c,
+            isSelf: true,
+            displayName: 'Избранное',
+          };
+        }
+        return c;
+      })
+    );
+  }, [credentials?.profile?.phone]);
+
+  const updateAccountWid = useCallback((wid: string) => {
+    const phone = cleanPhoneNumber(wid);
+    if (!phone) return;
+    setCredentialsState((prev) => {
+      if (!prev) return prev;
+      if (prev.profile?.phone === phone) return prev;
+      return {
+        ...prev,
+        profile: {
+          ...prev.profile,
+          phone,
+          tariff: prev.profile?.tariff || 'MAX_DEVELOPER',
+          expirationDate: prev.profile?.expirationDate || '01.01.2030',
+        },
+      };
+    });
+  }, []);
 
   const saveCredentials = useCallback(
     async (creds: ApiCredentials) => {
@@ -139,17 +223,25 @@ export function useChatState() {
   const createChat = useCallback((phoneOrChatId: string) => {
     const chatId = phoneToChatId(phoneOrChatId);
     const phone = chatIdToPhone(chatId);
-    const displayName = formatPhoneDisplay(chatId);
+    const myPhone = credentials?.profile?.phone ? cleanPhoneNumber(credentials.profile.phone) : '';
+    const isSelf = Boolean(myPhone && cleanPhoneNumber(phone) === myPhone);
+    const displayName = isSelf ? 'Избранное' : formatPhoneDisplay(chatId);
 
     setChats((prev) => {
       const existing = prev.find((c) => c.id === chatId);
-      if (existing) return prev;
+      if (existing) {
+        if (isSelf && !existing.isSelf) {
+          return prev.map((c) => (c.id === chatId ? { ...c, isSelf: true, displayName: 'Избранное' } : c));
+        }
+        return prev;
+      }
 
       const newChat: Chat = {
         id: chatId,
         phoneNumber: phone,
         displayName,
         avatarColor: getAvatarColor(chatId),
+        isSelf,
         unreadCount: 0,
         createdAt: Date.now(),
       };
@@ -159,7 +251,7 @@ export function useChatState() {
     setActiveChatIdState(chatId);
     setIsNewChatModalOpen(false);
     return chatId;
-  }, []);
+  }, [credentials?.profile?.phone]);
 
   const setActiveChatId = useCallback((chatId: string) => {
     setActiveChatIdState(chatId);
@@ -273,6 +365,10 @@ export function useChatState() {
       // Ensure chat exists
       setChats((prev) => {
         const exists = prev.some((c) => c.id === chatId);
+        const myPhone = credentials?.profile?.phone ? cleanPhoneNumber(credentials.profile.phone) : '';
+        const isSelf = Boolean(myPhone && cleanPhoneNumber(chatIdToPhone(chatId)) === myPhone);
+        const displayName = isSelf ? 'Избранное' : formatPhoneDisplay(chatId);
+
         const incomingMsg: Message = {
           id: idMessage,
           chatId,
@@ -288,6 +384,8 @@ export function useChatState() {
             c.id === chatId
               ? {
                   ...c,
+                  isSelf: isSelf || c.isSelf,
+                  displayName: isSelf ? 'Избранное' : c.displayName,
                   lastMessage: incomingMsg,
                   unreadCount: c.id === activeChatId ? 0 : c.unreadCount + 1,
                 }
@@ -297,8 +395,9 @@ export function useChatState() {
           const newChat: Chat = {
             id: chatId,
             phoneNumber: chatIdToPhone(chatId),
-            displayName: formatPhoneDisplay(chatId),
+            displayName,
             avatarColor: getAvatarColor(chatId),
+            isSelf,
             lastMessage: incomingMsg,
             unreadCount: 1,
             createdAt: Date.now(),
@@ -330,8 +429,20 @@ export function useChatState() {
         };
       });
     },
-    [activeChatId]
+    [activeChatId, credentials?.profile?.phone]
   );
+
+  const clearChatMessages = useCallback((chatId: string) => {
+    setMessages((prev) => ({
+      ...prev,
+      [chatId]: [],
+    }));
+    setChats((prev) =>
+      prev.map((c) =>
+        c.id === chatId ? { ...c, lastMessage: undefined, unreadCount: 0 } : c
+      )
+    );
+  }, []);
 
   const activeChat = chats.find((c) => c.id === activeChatId) || null;
   const activeMessages = activeChatId ? messages[activeChatId] || [] : [];
@@ -343,8 +454,11 @@ export function useChatState() {
     activeChat,
     activeChatId,
     activeMessages,
+    theme,
+    toggleTheme,
     isAuthModalOpen,
     isNewChatModalOpen,
+    isInstanceInfoOpen,
     isSending,
     sendError,
     saveCredentials,
@@ -353,8 +467,11 @@ export function useChatState() {
     setActiveChatId,
     sendMessage,
     addIncomingMessage,
+    updateAccountWid,
+    clearChatMessages,
     setIsAuthModalOpen,
     setIsNewChatModalOpen,
-    refreshStatus: () => (credentials ? checkStatus(credentials) : Promise.resolve('')),
+    setIsInstanceInfoOpen,
+    refreshStatus: () => (credentials ? checkStatus(credentials, true) : Promise.resolve('')),
   };
 }

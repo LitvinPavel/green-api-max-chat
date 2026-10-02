@@ -7,9 +7,11 @@ import {
   MessageSquare,
   ArrowLeft,
   MoreVertical,
-  CheckCircle2,
   Trash2,
   Phone,
+  Bookmark,
+  Paperclip,
+  CheckCircle2,
 } from 'lucide-react';
 
 interface ChatWindowProps {
@@ -33,6 +35,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 }) => {
   const [inputText, setInputText] = useState('');
   const [showMenu, setShowMenu] = useState(false);
+  const [showAttachmentHint, setShowAttachmentHint] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -67,7 +70,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
   // If no chat is selected, show empty state
   if (!chat) {
     return (
-      <div className="max-chat-window">
+      <div className="max-chat-window empty-view">
         <div className="empty-chat-screen">
           <div className="empty-chat-illustration">
             <MessageSquare size={44} />
@@ -84,7 +87,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
     );
   }
 
-  // Group messages by date for date separators
+  const isSelf = Boolean(chat.isSelf);
   let lastDateStr = '';
 
   return (
@@ -94,29 +97,36 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <div className="chat-header-profile">
           {onBackToSidebar && (
             <button
-              className="icon-btn"
+              className="icon-btn header-back-btn"
               onClick={onBackToSidebar}
-              style={{ marginRight: '-4px' }}
               title="Назад к списку чатов"
             >
-              <ArrowLeft size={18} />
+              <ArrowLeft size={19} />
             </button>
           )}
 
           <div
-            className="chat-header-avatar"
-            style={{ backgroundColor: chat.avatarColor }}
+            className={`chat-header-avatar ${isSelf ? 'chat-avatar-self' : ''}`}
+            style={{ backgroundColor: isSelf ? '#5b5ce2' : chat.avatarColor }}
           >
-            {chat.displayName.slice(0, 2)}
+            {isSelf ? <Bookmark size={18} /> : chat.displayName.slice(0, 2)}
           </div>
 
           <div className="chat-header-text">
-            <h2>{chat.displayName}</h2>
-            <span>мессенджер MAX • {chat.id}</span>
+            <div className="chat-header-title-row">
+              <h2>{isSelf ? 'Избранное' : chat.displayName}</h2>
+              {isSelf && <span className="self-tag">Вы</span>}
+            </div>
+            <span>
+              {isSelf
+                ? 'мессенджер MAX • Заметки и файлы себе'
+                : `мессенджер MAX • ${chat.phoneNumber || chat.id}`}
+            </span>
           </div>
         </div>
 
-        <div style={{ position: 'relative' }}>
+        {/* Top Header Actions */}
+        <div className="chat-header-actions" style={{ position: 'relative' }}>
           <button
             className="icon-btn"
             onClick={() => setShowMenu((prev) => !prev)}
@@ -126,56 +136,27 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
           </button>
 
           {showMenu && (
-            <div
-              style={{
-                position: 'absolute',
-                top: '100%',
-                right: 0,
-                marginTop: '6px',
-                backgroundColor: '#ffffff',
-                borderRadius: '8px',
-                boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                border: '1px solid var(--max-border)',
-                minWidth: '180px',
-                zIndex: 20,
-                padding: '4px',
-              }}
-            >
+            <div className="chat-options-menu">
               <button
-                className="btn btn-secondary"
-                style={{
-                  width: '100%',
-                  border: 'none',
-                  justifyContent: 'flex-start',
-                  padding: '8px 12px',
-                  fontSize: '13px',
-                }}
+                className="menu-item"
                 onClick={() => {
                   navigator.clipboard.writeText(chat.phoneNumber);
                   setShowMenu(false);
                 }}
               >
-                <Phone size={14} style={{ marginRight: '8px' }} />
+                <Phone size={14} />
                 Копировать номер
               </button>
 
               {onClearChat && (
                 <button
-                  className="btn btn-secondary"
-                  style={{
-                    width: '100%',
-                    border: 'none',
-                    justifyContent: 'flex-start',
-                    padding: '8px 12px',
-                    fontSize: '13px',
-                    color: 'var(--max-status-error)',
-                  }}
+                  className="menu-item text-danger"
                   onClick={() => {
                     onClearChat();
                     setShowMenu(false);
                   }}
                 >
-                  <Trash2 size={14} style={{ marginRight: '8px' }} />
+                  <Trash2 size={14} />
                   Очистить сообщения
                 </button>
               )}
@@ -184,48 +165,39 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       </div>
 
-      {/* Message Feed */}
-      <div className="max-message-feed">
+      {/* Message Feed with Doodle Background */}
+      <div className="max-message-feed doodle-bg">
         {messages.length === 0 ? (
-          <div
-            style={{
-              textAlign: 'center',
-              color: 'var(--max-text-muted)',
-              fontSize: '13.5px',
-              margin: 'auto',
-              maxWidth: '320px',
-              lineHeight: 1.5,
-            }}
-          >
-            <div
-              style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
-                background: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                margin: '0 auto 12px',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-              }}
-            >
-              <CheckCircle2 size={24} color="var(--max-primary)" />
+          <div className="feed-empty-message">
+            <div className="feed-empty-icon">
+              {isSelf ? (
+                <Bookmark size={26} color="var(--max-primary)" />
+              ) : (
+                <CheckCircle2 size={26} color="var(--max-primary)" />
+              )}
             </div>
-            Чат с номером <strong>{chat.displayName}</strong> создан.
-            <br />
-            Напишите первое сообщение ниже, чтобы начать диалог в MAX!
+            <div style={{ fontWeight: 600, fontSize: '15px', marginBottom: '6px' }}>
+              {isSelf ? 'Ваши сохраненные сообщения' : `Чат с ${chat.displayName}`}
+            </div>
+            <p>
+              {isSelf
+                ? 'Здесь удобно сохранять важные заметки, ссылки и проверять доставку сообщений через GREEN-API.'
+                : 'Диалог создан. Напишите первое сообщение ниже, чтобы начать общение!'}
+            </p>
           </div>
         ) : (
           messages.map((msg) => {
-            const dateStr = formatMessageDateSeparator(msg.timestamp);
+            const rawDateStr = formatMessageDateSeparator(msg.timestamp);
+            const dateStr = rawDateStr.toUpperCase();
             const showSeparator = dateStr !== lastDateStr;
             lastDateStr = dateStr;
 
             return (
               <React.Fragment key={msg.id}>
                 {showSeparator && (
-                  <div className="date-separator">{dateStr}</div>
+                  <div className="date-separator-wrap">
+                    <span className="date-separator-pill">{dateStr}</span>
+                  </div>
                 )}
                 <MessageItem message={msg} />
               </React.Fragment>
@@ -237,10 +209,30 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       {/* Input Bar */}
       <form className="max-input-bar" onSubmit={handleSend}>
+        {/* Attachment Button */}
+        <div style={{ position: 'relative' }}>
+          <button
+            type="button"
+            className="icon-btn attachment-btn"
+            onClick={() => {
+              setShowAttachmentHint(true);
+              setTimeout(() => setShowAttachmentHint(false), 2500);
+            }}
+            title="Прикрепить файл"
+          >
+            <Paperclip size={20} />
+          </button>
+          {showAttachmentHint && (
+            <div className="attachment-tooltip">
+              По ТЗ поддерживаются только текстовые сообщения (метод sendMessage)
+            </div>
+          )}
+        </div>
+
         <textarea
           ref={inputRef}
           className="message-input"
-          placeholder="Сообщение"
+          placeholder="Введите сообщение"
           rows={1}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}

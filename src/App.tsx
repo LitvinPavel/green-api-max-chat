@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { ChatWindow } from '@/components/ChatWindow';
 import { AuthModal } from '@/components/AuthModal';
 import { NewChatModal } from '@/components/NewChatModal';
+import { InstanceInfoModal } from '@/components/InstanceInfoModal';
 import '@/styles/max-theme.css';
 
 export const App: React.FC = () => {
@@ -15,16 +16,23 @@ export const App: React.FC = () => {
     activeChat,
     activeChatId,
     activeMessages,
+    theme,
+    toggleTheme,
     isAuthModalOpen,
     isNewChatModalOpen,
+    isInstanceInfoOpen,
     isSending,
     saveCredentials,
     createChat,
     setActiveChatId,
     sendMessage,
     addIncomingMessage,
+    updateAccountWid,
+    clearChatMessages,
     setIsAuthModalOpen,
     setIsNewChatModalOpen,
+    setIsInstanceInfoOpen,
+    refreshStatus,
   } = useChatState();
 
   // Polling hook for receiving messages through HTTP API queue
@@ -37,6 +45,9 @@ export const App: React.FC = () => {
     credentials,
     onMessageReceived: (chatId, text, senderName, idMessage, timestamp) => {
       addIncomingMessage(chatId, text, senderName, idMessage, timestamp);
+    },
+    onInstanceWidDetected: (wid) => {
+      updateAccountWid(wid);
     },
     enabled: Boolean(credentials),
   });
@@ -54,7 +65,10 @@ export const App: React.FC = () => {
   };
 
   return (
-    <div className={`max-app ${isMobileChatOpen && activeChat ? 'chat-active' : ''}`}>
+    <div
+      className={`max-app ${isMobileChatOpen && activeChat ? 'chat-active' : ''}`}
+      data-theme={theme}
+    >
       {/* Left Sidebar */}
       <Sidebar
         chats={chats}
@@ -62,12 +76,18 @@ export const App: React.FC = () => {
         onSelectChat={handleSelectChat}
         onOpenNewChatModal={() => setIsNewChatModalOpen(true)}
         onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onOpenInstanceInfo={() => setIsInstanceInfoOpen(true)}
         credentials={credentials}
         instanceStatus={instanceStatus}
         isPolling={isPolling}
         receivedCount={receivedCount}
         pollingError={pollingError}
-        onManualPoll={triggerManualCheck}
+        onManualPoll={async () => {
+          await triggerManualCheck();
+          await refreshStatus();
+        }}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
 
       {/* Main Chat Area */}
@@ -78,6 +98,7 @@ export const App: React.FC = () => {
         isSending={isSending}
         onOpenNewChat={() => setIsNewChatModalOpen(true)}
         onBackToSidebar={handleBackToSidebar}
+        onClearChat={activeChatId ? () => clearChatMessages(activeChatId) : undefined}
       />
 
       {/* Modals */}
@@ -94,6 +115,20 @@ export const App: React.FC = () => {
         onCreateChat={(phone) => {
           handleSelectChat(createChat(phone));
         }}
+      />
+
+      <InstanceInfoModal
+        isOpen={isInstanceInfoOpen}
+        onClose={() => setIsInstanceInfoOpen(false)}
+        credentials={credentials}
+        instanceStatus={instanceStatus}
+        isPolling={isPolling}
+        receivedCount={receivedCount}
+        onManualRefresh={async () => {
+          await triggerManualCheck();
+          await refreshStatus();
+        }}
+        onOpenSettings={() => setIsAuthModalOpen(true)}
       />
     </div>
   );

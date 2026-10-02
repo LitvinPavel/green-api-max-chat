@@ -2,10 +2,19 @@
  * Domain types for GREEN-API MAX Messenger Client
  */
 
+export interface InstanceProfile {
+  phone?: string;
+  avatarUrl?: string;
+  name?: string;
+  tariff?: string;
+  expirationDate?: string;
+}
+
 export interface ApiCredentials {
   idInstance: string;
   apiTokenInstance: string;
   apiUrl: string; // default: 'https://api.green-api.com'
+  profile?: InstanceProfile;
 }
 
 export type MessageStatus = 'pending' | 'sent' | 'delivered' | 'read' | 'error';
@@ -24,8 +33,10 @@ export interface Message {
 export interface Chat {
   id: string; // e.g. "79991234567@c.us"
   phoneNumber: string; // e.g. "79991234567"
-  displayName: string; // e.g. "+7 (999) 123-45-67"
+  displayName: string; // e.g. "+7 (999) 123-45-67" or "Избранное"
   avatarColor: string;
+  avatarUrl?: string;
+  isSelf?: boolean;
   lastMessage?: Message;
   unreadCount: number;
   createdAt: number;
@@ -37,6 +48,15 @@ export interface SendMessageResponse {
 
 export interface StateInstanceResponse {
   stateInstance: 'authorized' | 'notAuthorized' | 'blocked' | 'sleepMode' | 'starting' | string;
+}
+
+export interface WaSettingsResponse {
+  stateInstance?: string;
+  phone?: string;
+  avatar?: string;
+  name?: string;
+  deviceType?: string;
+  [key: string]: any;
 }
 
 export interface NotificationBody {
@@ -74,3 +94,4 @@ export interface ReceiveNotificationResponse {
 export interface DeleteNotificationResponse {
   result: boolean;
 }
+

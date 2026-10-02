@@ -9,8 +9,12 @@ import {
   CheckCheck,
   AlertCircle,
   MessageCircle,
+  Bookmark,
+  Sun,
+  Moon,
+  Info,
 } from 'lucide-react';
-import { formatMessageTime, getInitials } from '@/utils/formatters';
+import { formatMessageTime, getInitials, formatPhoneDisplay } from '@/utils/formatters';
 
 interface SidebarProps {
   chats: Chat[];
@@ -18,12 +22,15 @@ interface SidebarProps {
   onSelectChat: (chatId: string) => void;
   onOpenNewChatModal: () => void;
   onOpenAuthModal: () => void;
+  onOpenInstanceInfo: () => void;
   credentials: ApiCredentials | null;
   instanceStatus: string;
   isPolling: boolean;
   receivedCount: number;
   pollingError: string | null;
   onManualPoll: () => Promise<any>;
+  theme: 'dark' | 'light';
+  onToggleTheme: () => void;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -32,12 +39,15 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onSelectChat,
   onOpenNewChatModal,
   onOpenAuthModal,
+  onOpenInstanceInfo,
   credentials,
   instanceStatus,
   isPolling,
   receivedCount,
   pollingError,
   onManualPoll,
+  theme,
+  onToggleTheme,
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -66,35 +76,93 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const statusColorClass =
     instanceStatus === 'authorized'
       ? 'online'
-      : instanceStatus === 'notAuthorized' || instanceStatus === 'starting' || instanceStatus === 'sleepMode' || instanceStatus === 'rate-limited'
+      : instanceStatus === 'notAuthorized' ||
+        instanceStatus === 'starting' ||
+        instanceStatus === 'sleepMode' ||
+        instanceStatus === 'rate-limited'
       ? 'warning'
       : instanceStatus === 'unknown'
       ? 'offline'
       : 'error';
 
+  const profilePhone = credentials?.profile?.phone;
+  const profileAvatar = credentials?.profile?.avatarUrl;
+
   return (
     <aside className="max-sidebar">
-      {/* Top Header */}
+      {/* Top Header with dynamic instance identity */}
       <div className="max-sidebar-header">
-        <div className="max-brand">
-          <div className="max-brand-logo">M</div>
-          <div className="max-brand-info">
-            <h1>MAX Web</h1>
-            <div className="max-instance-badge">
-              <span
-                className={`status-indicator ${statusColorClass}`}
-                title={`Статус инстанса: ${instanceStatus}`}
-              />
-              <span title={`Статус инстанса: ${instanceStatus}`}>
-                {credentials
-                  ? `id: ${credentials.idInstance}${instanceStatus === 'rate-limited' ? ' (лимит 429)' : instanceStatus !== 'authorized' && instanceStatus !== 'unknown' ? ` (${instanceStatus})` : ''}`
-                  : 'Не авторизован'}
+        <div
+          className="max-user-profile"
+          onClick={onOpenInstanceInfo}
+          title="Нажмите, чтобы просмотреть карточку инстанса"
+        >
+          <div className="max-user-avatar-wrap">
+            {profileAvatar ? (
+              <img src={profileAvatar} alt="Profile" className="max-user-avatar-img" />
+            ) : (
+              <div className="max-user-avatar-placeholder">
+                {profilePhone ? getInitials(profilePhone) : 'M'}
+              </div>
+            )}
+            <span
+              className={`status-indicator-badge ${statusColorClass}`}
+              title={`Статус: ${instanceStatus}`}
+            />
+          </div>
+
+          <div className="max-user-info">
+            <div className="max-user-title-row">
+              <span className="max-user-title">
+                {profilePhone
+                  ? formatPhoneDisplay(profilePhone)
+                  : credentials?.idInstance
+                  ? `Инстанс ${credentials.idInstance}`
+                  : 'GREEN-API'}
               </span>
+              <span className="max-purple-badge">MAX</span>
+            </div>
+
+            <div className="max-user-sub-row">
+              <span className={`status-pill-text ${statusColorClass}`}>
+                ● {instanceStatus === 'authorized'
+                  ? 'Авторизован'
+                  : instanceStatus === 'rate-limited'
+                  ? 'Лимит 429'
+                  : instanceStatus === 'unknown'
+                  ? 'Подключение...'
+                  : instanceStatus}
+              </span>
+              {isPolling && (
+                <span title={`Очередь активна, получено: ${receivedCount}`} style={{ opacity: 0.65, fontSize: '10.5px' }}>
+                  • синхр.
+                </span>
+              )}
+              {credentials?.idInstance && (
+                <span className="max-id-text">id: {credentials.idInstance}</span>
+              )}
             </div>
           </div>
         </div>
 
+        {/* Action icons */}
         <div className="max-header-actions">
+          <button
+            className="icon-btn"
+            onClick={onToggleTheme}
+            title={theme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на темную тему'}
+          >
+            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
+          </button>
+
+          <button
+            className="icon-btn"
+            onClick={onOpenInstanceInfo}
+            title="Информация об инстансе (как в админке)"
+          >
+            <Info size={18} />
+          </button>
+
           <button
             className="icon-btn icon-btn-primary"
             onClick={onOpenNewChatModal}
@@ -102,56 +170,39 @@ export const Sidebar: React.FC<SidebarProps> = ({
           >
             <MessageSquarePlus size={19} />
           </button>
+
           <button
             className="icon-btn"
             onClick={onOpenAuthModal}
             title="Настройки подключения GREEN-API"
           >
-            <Settings size={19} />
+            <Settings size={18} />
           </button>
         </div>
       </div>
 
-      {/* HTTP API Queue Status Bar */}
-      <div className="polling-status-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
-          <div
-            className="polling-pulse"
-            style={{
-              background: pollingError
-                ? 'var(--max-status-error)'
-                : isPolling
-                ? 'var(--max-primary)'
-                : '#9ca3af',
-            }}
-          />
-          <span
-            style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-            title={pollingError || (isPolling ? 'Очередь непрерывно опрашивается' : 'Слушатель остановлен')}
-          >
-            HTTP Очередь:{' '}
-            <strong style={{ color: pollingError ? 'var(--max-status-error)' : undefined }}>
-              {pollingError ? `Ошибка: ${pollingError}` : isPolling ? 'Слушатель активен' : 'Остановлен'}
-            </strong>
-            {receivedCount > 0 && ` (${receivedCount} получено)`}
+      {/* Subtle Error Banner (Only shown if rate-limited or offline) */}
+      {pollingError && (
+        <div className="polling-error-banner">
+          <AlertCircle size={14} className="banner-icon" />
+          <span className="banner-text">
+            {pollingError.includes('429')
+              ? 'Лимит запросов GREEN-API (429). Ожидание паузы...'
+              : pollingError}
           </span>
+          <button
+            className="banner-action-btn"
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            title="Повторить запрос"
+          >
+            <RefreshCw
+              size={12}
+              style={{ animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none' }}
+            />
+          </button>
         </div>
-
-        <button
-          className="icon-btn"
-          style={{ width: '26px', height: '26px', flexShrink: 0 }}
-          onClick={handleRefresh}
-          disabled={isRefreshing || !credentials}
-          title="Проверить входящие сообщения сейчас (receiveNotification)"
-        >
-          <RefreshCw
-            size={13}
-            style={{
-              animation: isRefreshing ? 'spin 0.8s linear infinite' : 'none',
-            }}
-          />
-        </button>
-      </div>
+      )}
 
       {/* Search Input */}
       <div className="max-sidebar-search">
@@ -187,6 +238,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
           filteredChats.map((chat) => {
             const isActive = chat.id === activeChatId;
             const lastMsg = chat.lastMessage;
+            const isSelf = Boolean(chat.isSelf);
 
             return (
               <div
@@ -195,15 +247,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 onClick={() => onSelectChat(chat.id)}
               >
                 <div
-                  className="chat-avatar"
-                  style={{ backgroundColor: chat.avatarColor }}
+                  className={`chat-avatar ${isSelf ? 'chat-avatar-self' : ''}`}
+                  style={{ backgroundColor: isSelf ? '#5b5ce2' : chat.avatarColor }}
                 >
-                  {getInitials(chat.displayName)}
+                  {isSelf ? <Bookmark size={20} /> : getInitials(chat.displayName)}
                 </div>
 
                 <div className="chat-info">
                   <div className="chat-info-top">
-                    <span className="chat-name">{chat.displayName}</span>
+                    <span className="chat-name" style={{ display: 'flex', alignItems: 'center', gap: '5px' }}>
+                      {isSelf ? 'Избранное' : chat.displayName}
+                      {isSelf && (
+                        <span className="self-tag">Вы</span>
+                      )}
+                    </span>
                     {lastMsg && (
                       <span className="chat-time">
                         {formatMessageTime(lastMsg.timestamp)}
@@ -219,7 +276,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <span style={{ marginRight: '4px', verticalAlign: 'middle' }}>
                               {lastMsg.status === 'sent' && <Check size={12} />}
                               {(lastMsg.status === 'delivered' || lastMsg.status === 'read') && (
-                                <CheckCheck size={12} color="var(--max-primary)" />
+                                <CheckCheck size={12} color="#53bdeb" />
                               )}
                               {lastMsg.status === 'error' && (
                                 <AlertCircle size={12} color="var(--max-status-error)" />
@@ -230,7 +287,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         </>
                       ) : (
                         <span style={{ fontStyle: 'italic', opacity: 0.7 }}>
-                          Нет сообщений
+                          {isSelf ? 'Заметки и сообщения себе' : 'Нет сообщений'}
                         </span>
                       )}
                     </span>

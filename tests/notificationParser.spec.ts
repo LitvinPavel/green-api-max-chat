@@ -78,4 +78,21 @@ describe('notificationParser', () => {
     const result = extractMessageFromNotification(statusNotification);
     expect(result).toBeNull();
   });
+
+  it('should extract instance wid from notification', () => {
+    const notification: NotificationBody = {
+      typeWebhook: 'incomingMessageReceived',
+      instanceData: {
+        idInstance: 310022753045,
+        wid: '79057280890@c.us',
+        typeInstance: 'whatsapp',
+      },
+      timestamp: 1727784000,
+      idMessage: 'MSG_123',
+    };
+
+    const wid = notification.instanceData?.wid;
+    expect(wid).toBe('79057280890@c.us');
+  });
 });
+
