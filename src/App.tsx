@@ -23,6 +23,7 @@ export const App: React.FC = () => {
     isInstanceInfoOpen,
     isSending,
     saveCredentials,
+    clearCredentials,
     createChat,
     setActiveChatId,
     sendMessage,
@@ -88,6 +89,7 @@ export const App: React.FC = () => {
         }}
         theme={theme}
         onToggleTheme={toggleTheme}
+        onLogout={clearCredentials}
       />
 
       {/* Main Chat Area */}

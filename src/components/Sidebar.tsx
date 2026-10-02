@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { Chat, ApiCredentials } from '@/types';
 import {
   MessageSquarePlus,
@@ -13,6 +13,8 @@ import {
   Sun,
   Moon,
   Info,
+  MoreVertical,
+  LogOut,
 } from 'lucide-react';
 import { formatMessageTime, getInitials, formatPhoneDisplay } from '@/utils/formatters';
 
@@ -23,6 +25,7 @@ interface SidebarProps {
   onOpenNewChatModal: () => void;
   onOpenAuthModal: () => void;
   onOpenInstanceInfo: () => void;
+  onLogout?: () => void;
   credentials: ApiCredentials | null;
   instanceStatus: string;
   isPolling: boolean;
@@ -40,10 +43,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenNewChatModal,
   onOpenAuthModal,
   onOpenInstanceInfo,
+  onLogout,
   credentials,
   instanceStatus,
-  isPolling,
-  receivedCount,
+  isPolling: _isPolling,
+  receivedCount: _receivedCount,
   pollingError,
   onManualPoll,
   theme,
@@ -51,6 +55,23 @@ export const Sidebar: React.FC<SidebarProps> = ({
 }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [showMenu, setShowMenu] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setShowMenu(false);
+      }
+    };
+    if (showMenu) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [showMenu]);
 
   // Filter chats by search query
   const filteredChats = useMemo(() => {
@@ -90,7 +111,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
   return (
     <aside className="max-sidebar">
-      {/* Top Header with dynamic instance identity */}
+      {/* Top Header: Clean 2-button layout so everything fits in full */}
       <div className="max-sidebar-header">
         <div
           className="max-user-profile"
@@ -118,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   ? formatPhoneDisplay(profilePhone)
                   : credentials?.idInstance
                   ? `Инстанс ${credentials.idInstance}`
-                  : 'GREEN-API'}
+                  : 'MAX Messenger'}
               </span>
               <span className="max-purple-badge">MAX</span>
             </div>
@@ -130,54 +151,85 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   : instanceStatus === 'rate-limited'
                   ? 'Лимит 429'
                   : instanceStatus === 'unknown'
-                  ? 'Подключение...'
+                  ? 'В сети'
                   : instanceStatus}
               </span>
-              {isPolling && (
-                <span title={`Очередь активна, получено: ${receivedCount}`} style={{ opacity: 0.65, fontSize: '10.5px' }}>
-                  • синхр.
-                </span>
-              )}
               {credentials?.idInstance && (
-                <span className="max-id-text">id: {credentials.idInstance}</span>
+                <span className="max-id-text">• id: {credentials.idInstance}</span>
               )}
             </div>
           </div>
         </div>
 
-        {/* Action icons */}
-        <div className="max-header-actions">
-          <button
-            className="icon-btn"
-            onClick={onToggleTheme}
-            title={theme === 'dark' ? 'Переключить на светлую тему' : 'Переключить на темную тему'}
-          >
-            {theme === 'dark' ? <Sun size={18} /> : <Moon size={18} />}
-          </button>
-
-          <button
-            className="icon-btn"
-            onClick={onOpenInstanceInfo}
-            title="Информация об инстансе (как в админке)"
-          >
-            <Info size={18} />
-          </button>
-
+        {/* Action icons: exactly 2 buttons to avoid crowding */}
+        <div className="max-header-actions" ref={menuRef}>
           <button
             className="icon-btn icon-btn-primary"
             onClick={onOpenNewChatModal}
             title="Начать новый чат"
           >
-            <MessageSquarePlus size={19} />
+            <MessageSquarePlus size={20} />
           </button>
 
-          <button
-            className="icon-btn"
-            onClick={onOpenAuthModal}
-            title="Настройки подключения GREEN-API"
-          >
-            <Settings size={18} />
-          </button>
+          <div style={{ position: 'relative' }}>
+            <button
+              className="icon-btn"
+              onClick={() => setShowMenu((prev) => !prev)}
+              title="Меню и настройки"
+            >
+              <MoreVertical size={19} />
+            </button>
+
+            {showMenu && (
+              <div className="sidebar-menu-dropdown">
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    onOpenInstanceInfo();
+                    setShowMenu(false);
+                  }}
+                >
+                  <Info size={15} />
+                  <span>Инфо об инстансе</span>
+                </button>
+
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    onToggleTheme();
+                    setShowMenu(false);
+                  }}
+                >
+                  {theme === 'dark' ? <Sun size={15} /> : <Moon size={15} />}
+                  <span>{theme === 'dark' ? 'Светлая тема' : 'Темная тема'}</span>
+                </button>
+
+                <button
+                  className="menu-item"
+                  onClick={() => {
+                    onOpenAuthModal();
+                    setShowMenu(false);
+                  }}
+                >
+                  <Settings size={15} />
+                  <span>Настройки ключей</span>
+                </button>
+
+                {onLogout && (
+                  <button
+                    className="menu-item text-danger"
+                    onClick={() => {
+                      onLogout();
+                      setShowMenu(false);
+                    }}
+                  >
+                    <LogOut size={15} />
+                    <span>Выйти</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -276,7 +328,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                             <span style={{ marginRight: '4px', verticalAlign: 'middle' }}>
                               {lastMsg.status === 'sent' && <Check size={12} />}
                               {(lastMsg.status === 'delivered' || lastMsg.status === 'read') && (
-                                <CheckCheck size={12} color="#53bdeb" />
+                                <CheckCheck size={12} color="var(--max-primary)" />
                               )}
                               {lastMsg.status === 'error' && (
                                 <AlertCircle size={12} color="var(--max-status-error)" />

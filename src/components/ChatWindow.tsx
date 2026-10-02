@@ -165,8 +165,8 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         </div>
       </div>
 
-      {/* Message Feed with Doodle Background */}
-      <div className="max-message-feed doodle-bg">
+      {/* Message Feed */}
+      <div className="max-message-feed">
         {messages.length === 0 ? (
           <div className="feed-empty-message">
             <div className="feed-empty-icon">

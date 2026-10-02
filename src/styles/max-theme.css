@@ -1,49 +1,43 @@
 /* ==========================================================================
- * MAX & GREEN-API Messenger Unified Stylesheet
- * Supports Dark Theme (GREEN-API Admin Console) and Light Theme (web.max.ru)
+ * MAX Web Messenger Stylesheet (web.max.ru Design System)
+ * Clean, modern corporate messenger styling with MAX Purple (#5b5ce2)
+ * Supports Dark Theme & Light Theme
  * ========================================================================== */
 
 :root,
 [data-theme="dark"] {
   --max-primary: #5b5ce2;
   --max-primary-hover: #4d4ecb;
-  --max-primary-light: rgba(91, 92, 226, 0.15);
+  --max-primary-light: rgba(91, 92, 226, 0.16);
 
-  --max-green: #00a884;
-  --max-green-hover: #029070;
-  --max-green-light: rgba(0, 168, 132, 0.15);
+  --max-bg-app: #0f1117;
+  --max-bg-sidebar: #161922;
+  --max-bg-chat: #12141a;
+  --max-bg-header: #1a1d26;
+  --max-bg-input: #222634;
+  --max-bg-modal: #1e222d;
 
-  --max-bg-app: #0c1317;
-  --max-bg-sidebar: #111b21;
-  --max-bg-chat: #0b141a;
-  --max-bg-header: #202c33;
-  --max-bg-input: #2a3942;
-  --max-bg-modal: #222e35;
+  --max-bg-bubble-in: #202532;
+  --max-bg-bubble-out: #5b5ce2;
+  --max-text-bubble-in: #e4e7eb;
+  --max-text-bubble-out: #ffffff;
 
-  --max-bg-bubble-in: #202c33;
-  --max-bg-bubble-out: #005c4b;
-  --max-text-bubble-in: #e9edef;
-  --max-text-bubble-out: #e9edef;
+  --max-text-main: #e4e7eb;
+  --max-text-secondary: #8b949e;
+  --max-text-muted: #606770;
 
-  --max-text-main: #e9edef;
-  --max-text-secondary: #8696a0;
-  --max-text-muted: #667781;
-
-  --max-border: #222d34;
-  --max-border-light: #1f2c34;
-  --max-hover: #202c33;
-  --max-active: #2a3942;
+  --max-border: #252936;
+  --max-border-light: #1e222d;
+  --max-hover: #202532;
+  --max-active: #292f3f;
 
   --max-status-online: #22c55e;
-  --max-status-offline: #8696a0;
+  --max-status-offline: #8b949e;
   --max-status-error: #ef4444;
   --max-status-warning: #f59e0b;
 
   --sidebar-width: 380px;
   --header-height: 64px;
-
-  --doodle-opacity: 0.055;
-  --doodle-filter: invert(1);
 }
 
 [data-theme="light"] {
@@ -51,38 +45,34 @@
   --max-primary-hover: #4d4ecb;
   --max-primary-light: #eef0fc;
 
-  --max-green: #008069;
-  --max-green-hover: #006b58;
-  --max-green-light: #e6f6f3;
-
   --max-bg-app: #eef1f5;
   --max-bg-sidebar: #ffffff;
-  --max-bg-chat: #efeae2;
-  --max-bg-header: #f0f2f5;
-  --max-bg-input: #ffffff;
+  --max-bg-chat: #f4f5f8;
+  --max-bg-header: #ffffff;
+  --max-bg-input: #f0f2f5;
   --max-bg-modal: #ffffff;
 
   --max-bg-bubble-in: #ffffff;
-  --max-bg-bubble-out: #d9fdd3;
-  --max-text-bubble-in: #111b21;
-  --max-text-bubble-out: #111b21;
+  --max-bg-bubble-out: #5b5ce2;
+  --max-text-bubble-in: #1c1e21;
+  --max-text-bubble-out: #ffffff;
 
-  --max-text-main: #111b21;
-  --max-text-secondary: #54656f;
-  --max-text-muted: #8696a0;
+  --max-text-main: #1c1e21;
+  --max-text-secondary: #65676b;
+  --max-text-muted: #8a8d91;
 
-  --max-border: #e9edef;
-  --max-border-light: #f5f6f6;
-  --max-hover: #f5f6f6;
-  --max-active: #e9edef;
+  --max-border: #e4e6eb;
+  --max-border-light: #f0f2f5;
+  --max-hover: #f2f4f7;
+  --max-active: #eef0fc;
 
   --max-status-online: #22c55e;
-  --max-status-offline: #8696a0;
+  --max-status-offline: #8a8d91;
   --max-status-error: #ef4444;
   --max-status-warning: #f59e0b;
 
-  --doodle-opacity: 0.07;
-  --doodle-filter: none;
+  --sidebar-width: 380px;
+  --header-height: 64px;
 }
 
 *, *::before, *::after {
@@ -135,6 +125,7 @@ body {
   justify-content: space-between;
   border-bottom: 1px solid var(--max-border);
   background-color: var(--max-bg-header);
+  position: relative;
 }
 
 .max-user-profile {
@@ -147,6 +138,8 @@ body {
   border-radius: 8px;
   transition: background-color 0.15s ease;
   user-select: none;
+  cursor: pointer;
+  margin-right: 8px;
 }
 .max-user-profile:hover {
   background-color: var(--max-hover);
@@ -177,7 +170,7 @@ body {
   color: #ffffff;
   font-weight: 700;
   font-size: 14px;
-  box-shadow: 0 2px 6px rgba(91, 92, 226, 0.3);
+  box-shadow: 0 2px 6px rgba(91, 92, 226, 0.35);
 }
 
 .status-indicator-badge {
@@ -198,16 +191,18 @@ body {
   display: flex;
   flex-direction: column;
   min-width: 0;
+  justify-content: center;
 }
 
 .max-user-title-row {
   display: flex;
   align-items: center;
   gap: 6px;
+  min-width: 0;
 }
 
 .max-user-title {
-  font-size: 14px;
+  font-size: 14.5px;
   font-weight: 700;
   color: var(--max-text-main);
   white-space: nowrap;
@@ -231,9 +226,13 @@ body {
 .max-user-sub-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 11px;
+  gap: 6px;
+  font-size: 11.5px;
   color: var(--max-text-secondary);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status-pill-text {
@@ -279,6 +278,22 @@ body {
 .icon-btn-primary:hover {
   background-color: var(--max-primary);
   color: #ffffff;
+}
+
+/* Sidebar Dropdown Menu */
+.sidebar-menu-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 6px;
+  background-color: var(--max-bg-modal);
+  border-radius: 10px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--max-border);
+  min-width: 195px;
+  z-index: 50;
+  padding: 6px;
+  animation: modal-pop 0.15s ease-out;
 }
 
 /* Subtle Error Banner */
@@ -346,7 +361,7 @@ body {
   transition: background-color 0.15s, border-color 0.15s;
 }
 .search-input:focus {
-  border-color: var(--max-green);
+  border-color: var(--max-primary);
 }
 
 /* Chat List */
@@ -440,7 +455,7 @@ body {
 }
 
 .unread-badge {
-  background-color: var(--max-green);
+  background-color: var(--max-primary);
   color: #ffffff;
   font-size: 11px;
   font-weight: 700;
@@ -464,7 +479,7 @@ body {
 }
 
 /* ==========================================================================
- * Main Chat Window
+ * Main Chat Window (MAX Style)
  * ========================================================================== */
 .max-chat-window {
   flex: 1;
@@ -558,25 +573,17 @@ body {
 }
 
 /* ==========================================================================
- * Message Feed with Doodle Pattern (Admin & WhatsApp / MAX Style)
+ * Message Feed (Clean MAX Style, NO WhatsApp Doodles)
  * ========================================================================== */
 .max-message-feed {
   flex: 1;
   overflow-y: auto;
-  padding: 16px 24px;
+  padding: 18px 24px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
   position: relative;
-}
-
-.doodle-bg {
-  /* Elegant WhatsApp/MAX Messenger Doodle pattern */
   background-color: var(--max-bg-chat);
-  background-image: radial-gradient(var(--max-border) 0.75px, transparent 0.75px),
-                    radial-gradient(var(--max-border) 0.75px, var(--max-bg-chat) 0.75px);
-  background-size: 30px 30px;
-  background-position: 0 0, 15px 15px;
 }
 
 .feed-empty-message {
@@ -611,23 +618,17 @@ body {
 
 .date-separator-pill {
   padding: 4px 12px;
-  border-radius: 8px;
-  background-color: rgba(32, 44, 51, 0.85);
+  border-radius: 12px;
+  background-color: var(--max-border);
   color: var(--max-text-secondary);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.5px;
   user-select: none;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
-}
-[data-theme="light"] .date-separator-pill {
-  background-color: rgba(255, 255, 255, 0.88);
-  color: var(--max-text-secondary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 /* ==========================================================================
- * Message Bubbles
+ * Message Bubbles (MAX Indigo/Purple)
  * ========================================================================== */
 .message-bubble-row {
   display: flex;
@@ -642,39 +643,35 @@ body {
 
 .message-bubble {
   max-width: 66%;
-  min-width: 90px;
-  padding: 7px 11px 5px;
-  border-radius: 8px;
+  min-width: 80px;
+  padding: 8px 12px 6px;
+  border-radius: 14px;
   position: relative;
   word-break: break-word;
   line-height: 1.4;
   font-size: 14.5px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08);
 }
 
 .message-bubble.incoming {
   background-color: var(--max-bg-bubble-in);
   color: var(--max-text-bubble-in);
-  border-top-left-radius: 2px;
+  border-bottom-left-radius: 4px;
+  border: 1px solid var(--max-border-light);
 }
 
 .message-bubble.outgoing {
   background-color: var(--max-bg-bubble-out);
   color: var(--max-text-bubble-out);
-  border-top-right-radius: 2px;
+  border-bottom-right-radius: 4px;
 }
 
-.bubble-author {
-  font-size: 12px;
+.bubble-author.incoming {
+  font-size: 11.5px;
   font-weight: 700;
+  color: var(--max-primary);
   margin-bottom: 2px;
   user-select: none;
-}
-.bubble-author.outgoing {
-  color: #53bdeb; /* Cyan/Teal highlight like in GREEN-API screenshot */
-}
-.bubble-author.incoming {
-  color: #5b5ce2;
 }
 
 .bubble-text {
@@ -687,25 +684,30 @@ body {
   align-items: center;
   justify-content: flex-end;
   gap: 4px;
-  margin-top: 2px;
+  margin-top: 3px;
   font-size: 11px;
 }
 
-.bubble-time {
-  opacity: 0.65;
-  font-size: 10.5px;
+.message-bubble.incoming .bubble-time {
+  color: var(--max-text-muted);
+}
+.message-bubble.outgoing .bubble-time {
+  color: rgba(255, 255, 255, 0.75);
 }
 
 .bubble-status-icon {
   display: inline-flex;
   align-items: center;
 }
+.message-bubble.outgoing .bubble-status-icon {
+  color: rgba(255, 255, 255, 0.85);
+}
 
 /* ==========================================================================
- * Chat Input Bar
+ * Chat Input Bar (MAX Style)
  * ========================================================================== */
 .max-input-bar {
-  padding: 10px 16px;
+  padding: 10px 18px;
   background-color: var(--max-bg-header);
   border-top: 1px solid var(--max-border);
   display: flex;
@@ -719,7 +721,7 @@ body {
 }
 .attachment-btn:hover {
   background-color: var(--max-hover);
-  color: var(--max-green);
+  color: var(--max-primary);
 }
 
 .attachment-tooltip {
@@ -742,8 +744,8 @@ body {
   flex: 1;
   background-color: var(--max-bg-input);
   border: 1px solid transparent;
-  border-radius: 8px;
-  padding: 10px 14px;
+  border-radius: 20px;
+  padding: 9px 16px;
   font-size: 14.5px;
   color: var(--max-text-main);
   outline: none;
@@ -754,14 +756,14 @@ body {
   transition: border-color 0.15s ease;
 }
 .message-input:focus {
-  border-color: var(--max-green);
+  border-color: var(--max-primary);
 }
 
 .send-btn {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background-color: var(--max-green);
+  background-color: var(--max-primary);
   border: none;
   color: #ffffff;
   cursor: pointer;
@@ -770,9 +772,10 @@ body {
   justify-content: center;
   flex-shrink: 0;
   transition: background-color 0.15s, transform 0.1s;
+  box-shadow: 0 2px 6px rgba(91, 92, 226, 0.35);
 }
 .send-btn:hover {
-  background-color: var(--max-green-hover);
+  background-color: var(--max-primary-hover);
 }
 .send-btn:active {
   transform: scale(0.95);
@@ -782,6 +785,7 @@ body {
   opacity: 0.5;
   cursor: not-allowed;
   transform: none;
+  box-shadow: none;
 }
 
 /* Empty Placeholder Screen */
@@ -823,12 +827,12 @@ body {
 }
 
 /* ==========================================================================
- * Modals & Instance Card (GREEN-API Style)
+ * Modals & Instance Card (MAX Style)
  * ========================================================================== */
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background-color: rgba(0, 0, 0, 0.6);
+  background-color: rgba(0, 0, 0, 0.55);
   backdrop-filter: blur(3px);
   display: flex;
   align-items: center;
@@ -881,14 +885,14 @@ body {
   gap: 10px;
 }
 
-/* Instance Properties Table (Exact match to admin panel screenshot) */
+/* Instance Properties Table */
 .instance-tariff-banner {
-  background: linear-gradient(90deg, #15803d 0%, #166534 100%);
+  background: linear-gradient(135deg, #5b5ce2 0%, #7d7ef0 100%);
   color: #ffffff;
   padding: 12px 16px;
   border-radius: 8px;
   margin-bottom: 16px;
-  box-shadow: 0 2px 8px rgba(22, 101, 52, 0.3);
+  box-shadow: 0 2px 8px rgba(91, 92, 226, 0.35);
 }
 
 .instance-properties-table {
@@ -993,7 +997,7 @@ body {
   transition: border-color 0.15s ease;
 }
 .form-input:focus {
-  border-color: var(--max-green);
+  border-color: var(--max-primary);
 }
 
 .form-hint {
@@ -1030,11 +1034,11 @@ body {
   transition: all 0.15s ease;
 }
 .btn-primary {
-  background-color: var(--max-green);
+  background-color: var(--max-primary);
   color: #ffffff;
 }
 .btn-primary:hover {
-  background-color: var(--max-green-hover);
+  background-color: var(--max-primary-hover);
 }
 .btn-primary:disabled {
   background-color: var(--max-text-muted);

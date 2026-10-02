@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ApiCredentials } from '@/types';
 import { KeyRound, AlertCircle, Loader2, X } from 'lucide-react';
+import { cleanPhoneNumber } from '@/utils/formatters';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -18,8 +19,18 @@ export const AuthModal: React.FC<AuthModalProps> = ({
   const [idInstance, setIdInstance] = useState(currentCredentials?.idInstance || '');
   const [apiTokenInstance, setApiTokenInstance] = useState(currentCredentials?.apiTokenInstance || '');
   const [apiUrl, setApiUrl] = useState(currentCredentials?.apiUrl || 'https://api.green-api.com');
+  const [phone, setPhone] = useState(currentCredentials?.profile?.phone || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (currentCredentials) {
+      setIdInstance(currentCredentials.idInstance);
+      setApiTokenInstance(currentCredentials.apiTokenInstance);
+      setApiUrl(currentCredentials.apiUrl || 'https://api.green-api.com');
+      setPhone(currentCredentials.profile?.phone || '');
+    }
+  }, [currentCredentials, isOpen]);
 
   if (!isOpen) return null;
 
@@ -42,10 +53,15 @@ export const AuthModal: React.FC<AuthModalProps> = ({
     setError(null);
 
     try {
+      const cleanPhoneDigits = phone ? cleanPhoneNumber(phone) : '';
       await onSave({
         idInstance: cleanId,
         apiTokenInstance: cleanToken,
         apiUrl: cleanUrl,
+        profile: {
+          ...currentCredentials?.profile,
+          phone: cleanPhoneDigits || currentCredentials?.profile?.phone,
+        },
       });
       onClose();
     } catch (err: any) {
@@ -124,7 +140,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               <div className="form-hint">Токен доступа к API инстанса</div>
             </div>
 
-            <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className="form-group">
               <label className="form-label">
                 API Host URL (по умолчанию https://api.green-api.com)
               </label>
@@ -139,6 +155,24 @@ export const AuthModal: React.FC<AuthModalProps> = ({
               </div>
               <div className="form-hint">
                 Укажите кастомный хост, если ваш инстанс размещен на выделенном сервере (например, https://7103.api.green-api.com)
+              </div>
+            </div>
+
+            <div className="form-group" style={{ marginBottom: 0 }}>
+              <label className="form-label">
+                Телефон инстанса (необязательно)
+              </label>
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="tel"
+                  className="form-input"
+                  placeholder="например, +7 (905) 728-08-90 или 79057280890"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                />
+              </div>
+              <div className="form-hint">
+                Ваш номер телефона в MAX. Если указан, чат со своим номером будет «Избранным», а в шапке отобразится ваш номер.
               </div>
             </div>
           </div>

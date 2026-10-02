@@ -13,28 +13,24 @@ export const MessageItem: React.FC<MessageItemProps> = ({ message }) => {
   return (
     <div className={`message-bubble-row ${isOutgoing ? 'outgoing' : 'incoming'}`}>
       <div className={`message-bubble ${isOutgoing ? 'outgoing' : 'incoming'}`}>
-        {/* Author Header like in GREEN-API console */}
-        {isOutgoing ? (
-          <div className="bubble-author outgoing">Вы</div>
-        ) : (
-          message.senderName && (
-            <div className="bubble-author incoming">{message.senderName}</div>
-          )
+        {/* Only show sender name on incoming messages if present */}
+        {!isOutgoing && message.senderName && (
+          <div className="bubble-author incoming">{message.senderName}</div>
         )}
 
         {/* Message Content */}
         <div className="bubble-text">{message.text}</div>
 
-        {/* Timestamp and Status Meta */}
+        {/* Timestamp and Delivery Status */}
         <div className="message-meta">
           <span className="bubble-time">{formatMessageTime(message.timestamp)}</span>
 
           {isOutgoing && (
             <span className="bubble-status-icon">
               {message.status === 'pending' && <Clock size={12} />}
-              {message.status === 'sent' && <Check size={13} color="rgba(255,255,255,0.7)" />}
+              {message.status === 'sent' && <Check size={13} />}
               {(message.status === 'delivered' || message.status === 'read') && (
-                <CheckCheck size={14} color="#53bdeb" />
+                <CheckCheck size={14} />
               )}
               {message.status === 'error' && (
                 <span title={message.errorText || 'Ошибка отправки'}>
