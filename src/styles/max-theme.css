@@ -124,6 +124,7 @@ body {
   display: inline-block;
 }
 .status-indicator.online { background-color: var(--max-status-online); }
+.status-indicator.warning { background-color: #f59e0b; }
 .status-indicator.offline { background-color: var(--max-status-offline); }
 .status-indicator.error { background-color: var(--max-status-error); }
 

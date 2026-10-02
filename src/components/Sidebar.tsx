@@ -63,7 +63,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
     }
   };
 
-  const isAuthorized = instanceStatus === 'authorized';
+  const statusColorClass =
+    instanceStatus === 'authorized'
+      ? 'online'
+      : instanceStatus === 'notAuthorized' || instanceStatus === 'starting' || instanceStatus === 'sleepMode'
+      ? 'warning'
+      : instanceStatus === 'unknown'
+      ? 'offline'
+      : 'error';
 
   return (
     <aside className="max-sidebar">
@@ -75,13 +82,13 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <h1>MAX Web</h1>
             <div className="max-instance-badge">
               <span
-                className={`status-indicator ${
-                  isAuthorized ? 'online' : instanceStatus === 'unknown' ? 'offline' : 'error'
-                }`}
-                title={`Статус: ${instanceStatus}`}
+                className={`status-indicator ${statusColorClass}`}
+                title={`Статус инстанса: ${instanceStatus}`}
               />
-              <span>
-                {credentials ? `id: ${credentials.idInstance}` : 'Не авторизован'}
+              <span title={`Статус инстанса: ${instanceStatus}`}>
+                {credentials
+                  ? `id: ${credentials.idInstance}${instanceStatus !== 'authorized' && instanceStatus !== 'unknown' ? ` (${instanceStatus})` : ''}`
+                  : 'Не авторизован'}
               </span>
             </div>
           </div>
@@ -107,12 +114,24 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
       {/* HTTP API Queue Status Bar */}
       <div className="polling-status-bar">
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <div className="polling-pulse" style={{ background: isPolling ? 'var(--max-primary)' : '#9ca3af' }} />
-          <span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', minWidth: 0 }}>
+          <div
+            className="polling-pulse"
+            style={{
+              background: pollingError
+                ? 'var(--max-status-error)'
+                : isPolling
+                ? 'var(--max-primary)'
+                : '#9ca3af',
+            }}
+          />
+          <span
+            style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+            title={pollingError || (isPolling ? 'Очередь непрерывно опрашивается' : 'Слушатель остановлен')}
+          >
             HTTP Очередь:{' '}
-            <strong>
-              {pollingError ? 'Ошибка связи' : isPolling ? 'Слушатель активен' : 'Остановлен'}
+            <strong style={{ color: pollingError ? 'var(--max-status-error)' : undefined }}>
+              {pollingError ? `Ошибка: ${pollingError}` : isPolling ? 'Слушатель активен' : 'Остановлен'}
             </strong>
             {receivedCount > 0 && ` (${receivedCount} получено)`}
           </span>
@@ -120,7 +139,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           className="icon-btn"
-          style={{ width: '26px', height: '26px' }}
+          style={{ width: '26px', height: '26px', flexShrink: 0 }}
           onClick={handleRefresh}
           disabled={isRefreshing || !credentials}
           title="Проверить входящие сообщения сейчас (receiveNotification)"

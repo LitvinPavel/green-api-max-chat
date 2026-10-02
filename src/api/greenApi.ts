@@ -80,7 +80,7 @@ export class GreenApiClient {
   /**
    * Receive next notification from the queue using HTTP API
    * Method: GET https://api.green-api.com/waInstance{{idInstance}}/receiveNotification/{{apiTokenInstance}}
-   * Returns null if queue is empty
+   * Returns null if queue is empty (HTTP 200 with empty body or null)
    */
   static async receiveNotification(
     credentials: ApiCredentials,
@@ -96,11 +96,23 @@ export class GreenApiClient {
     });
 
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        throw new Error('Ошибка авторизации (401/403): проверьте токен инстанса');
+      }
       throw new Error(`Ошибка получения уведомления (HTTP ${response.status})`);
     }
 
-    const data = await response.json();
-    return data;
+    const text = await response.text();
+    // When the queue is empty, GREEN-API returns HTTP 200 OK with empty body or "null"
+    if (!text || text.trim() === '' || text.trim() === 'null') {
+      return null;
+    }
+
+    try {
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
   }
 
   /**
@@ -124,7 +136,15 @@ export class GreenApiClient {
       throw new Error(`Ошибка удаления уведомления #${receiptId} (HTTP ${response.status})`);
     }
 
-    return response.json();
+    const text = await response.text();
+    if (!text || text.trim() === '') {
+      return { result: true };
+    }
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { result: true };
+    }
   }
 }
 

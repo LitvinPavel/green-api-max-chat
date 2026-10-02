@@ -240,7 +240,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
         <textarea
           ref={inputRef}
           className="message-input"
-          placeholder="Напишите текстовое сообщение (Enter для отправки)..."
+          placeholder="Сообщение"
           rows={1}
           value={inputText}
           onChange={(e) => setInputText(e.target.value)}

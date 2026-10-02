@@ -38,7 +38,7 @@ export const App: React.FC = () => {
     onMessageReceived: (chatId, text, senderName, idMessage, timestamp) => {
       addIncomingMessage(chatId, text, senderName, idMessage, timestamp);
     },
-    enabled: Boolean(credentials && instanceStatus === 'authorized'),
+    enabled: Boolean(credentials),
   });
 
   // Mobile navigation state
