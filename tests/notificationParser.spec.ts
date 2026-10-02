@@ -83,8 +83,8 @@ describe('notificationParser', () => {
     const notification: NotificationBody = {
       typeWebhook: 'incomingMessageReceived',
       instanceData: {
-        idInstance: 310022753045,
-        wid: '79057280890@c.us',
+        idInstance: 1101823456,
+        wid: '79991234567@c.us',
         typeInstance: 'whatsapp',
       },
       timestamp: 1727784000,
@@ -92,7 +92,7 @@ describe('notificationParser', () => {
     };
 
     const wid = notification.instanceData?.wid;
-    expect(wid).toBe('79057280890@c.us');
+    expect(wid).toBe('79991234567@c.us');
   });
 });
 

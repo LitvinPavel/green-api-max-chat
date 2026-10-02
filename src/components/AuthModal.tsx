@@ -166,7 +166,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({
                 <input
                   type="tel"
                   className="form-input"
-                  placeholder="например, +7 (905) 728-08-90 или 79057280890"
+                  placeholder="например, +7 (999) 123-45-67 или 79991234567"
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
                 />
