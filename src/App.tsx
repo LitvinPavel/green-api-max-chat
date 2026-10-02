@@ -116,6 +116,7 @@ export const App: React.FC = () => {
       <NewChatModal
         isOpen={isNewChatModalOpen}
         onClose={() => setIsNewChatModalOpen(false)}
+        credentials={credentials}
         onCreateChat={(phone) => {
           handleSelectChat(createChat(phone));
         }}

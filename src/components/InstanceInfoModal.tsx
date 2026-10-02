@@ -20,7 +20,7 @@ interface InstanceInfoModalProps {
   instanceStatus: string;
   isPolling: boolean;
   receivedCount: number;
-  onManualRefresh: () => Promise<any>;
+  onManualRefresh: () => Promise<void | string | unknown>;
   onOpenSettings: () => void;
 }
 
