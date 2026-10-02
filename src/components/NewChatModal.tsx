@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { MessageSquarePlus, X, AlertCircle } from 'lucide-react';
-import { cleanPhoneNumber, formatPhoneDisplay } from '@/utils/formatters';
+import { cleanPhoneNumber, formatPhoneDisplay, phoneToChatId } from '@/utils/formatters';
 
 interface NewChatModalProps {
   isOpen: boolean;
@@ -20,16 +20,35 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const cleaned = cleanPhoneNumber(phone);
-
-    if (!cleaned || cleaned.length < 10) {
-      setError('Введите корректный номер телефона (не менее 10 цифр, например 79991234567)');
+    const trimmed = phone.trim();
+    if (!trimmed) {
+      setError('Введите номер телефона или chatId получателя');
       return;
     }
 
-    onCreateChat(cleaned);
-    setPhone('');
-    setError(null);
+    if (trimmed.includes('@')) {
+      onCreateChat(trimmed);
+      setPhone('');
+      setError(null);
+      return;
+    }
+
+    const cleaned = cleanPhoneNumber(trimmed);
+    if (cleaned.length >= 10) {
+      onCreateChat(cleaned);
+      setPhone('');
+      setError(null);
+      return;
+    }
+
+    if (trimmed.length >= 4) {
+      onCreateChat(trimmed);
+      setPhone('');
+      setError(null);
+      return;
+    }
+
+    setError('Введите корректный номер телефона (например, 79991234567) или ID аккаунта');
   };
 
   return (
@@ -48,7 +67,7 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
         <form onSubmit={handleSubmit}>
           <div className="modal-body">
             <p style={{ fontSize: '13px', color: 'var(--max-text-secondary)', marginBottom: '16px' }}>
-              Введите номер телефона получателя сообщений в мессенджере MAX или WhatsApp.
+              Введите номер телефона получателя сообщений или прямой Chat ID.
             </p>
 
             {error && (
@@ -60,12 +79,12 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
 
             <div className="form-group" style={{ marginBottom: 8 }}>
               <label className="form-label">
-                Номер телефона <span style={{ color: 'var(--max-status-error)' }}>*</span>
+                Номер телефона или Chat ID <span style={{ color: 'var(--max-status-error)' }}>*</span>
               </label>
               <input
-                type="tel"
+                type="text"
                 className="form-input"
-                placeholder="+7 (999) 123-45-67 или 79991234567"
+                placeholder="+7 (999) 123-45-67, 79991234567 или ID чата"
                 value={phone}
                 onChange={(e) => {
                   setPhone(e.target.value);
@@ -77,10 +96,10 @@ export const NewChatModal: React.FC<NewChatModalProps> = ({
               <div className="form-hint">
                 {phone.replace(/\D/g, '').length >= 10 ? (
                   <span style={{ color: 'var(--max-status-online)', fontWeight: 500 }}>
-                    Формат чата: {formatPhoneDisplay(cleanPhoneNumber(phone))} ({cleanPhoneNumber(phone)}@c.us)
+                    Формат чата: {formatPhoneDisplay(phone)} ({phoneToChatId(phone)})
                   </span>
                 ) : (
-                  'Номер в международном формате с кодом страны (например, 79001234567)'
+                  'Номер в международном формате с кодом страны или ID получателя'
                 )}
               </div>
             </div>

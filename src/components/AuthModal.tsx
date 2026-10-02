@@ -64,8 +64,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({
         },
       });
       onClose();
-    } catch (err: any) {
-      setError(err.message || 'Ошибка подключения к инстансу GREEN-API');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Ошибка подключения к инстансу GREEN-API';
+      setError(msg);
     } finally {
       setLoading(false);
     }

@@ -167,8 +167,9 @@ export function useChatState() {
       }
 
       return res?.stateInstance;
-    } catch (err: any) {
-      if (String(err?.message || '').includes('429')) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : String(err);
+      if (msg.includes('429')) {
         // Rate limit exceeded - keep previous status if known or set rate-limited
         setInstanceStatus((prev) => (prev && prev !== 'unknown' ? prev : 'rate-limited'));
         return;
@@ -232,7 +233,20 @@ export function useChatState() {
   );
 
   const clearCredentials = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.CREDENTIALS);
     setCredentialsState(null);
+    setInstanceStatus('unknown');
+    setIsAuthModalOpen(true);
+  }, []);
+
+  const clearAllData = useCallback(() => {
+    localStorage.removeItem(STORAGE_KEYS.CREDENTIALS);
+    localStorage.removeItem(STORAGE_KEYS.CHATS);
+    localStorage.removeItem(STORAGE_KEYS.MESSAGES);
+    setCredentialsState(null);
+    setChats([]);
+    setMessages({});
+    setActiveChatIdState(null);
     setInstanceStatus('unknown');
     setIsAuthModalOpen(true);
   }, []);
@@ -351,15 +365,16 @@ export function useChatState() {
               : c
           )
         );
-      } catch (err: any) {
-        setSendError(err.message || 'Ошибка отправки');
+      } catch (err: unknown) {
+        const errorText = err instanceof Error ? err.message : 'Ошибка отправки';
+        setSendError(errorText);
         setMessages((prev) => {
           const list = prev[activeChatId] || [];
           return {
             ...prev,
             [activeChatId]: list.map((m) =>
               m.id === tempId
-                ? { ...m, status: 'error', errorText: err.message }
+                ? { ...m, status: 'error', errorText }
                 : m
             ),
           };
@@ -481,6 +496,7 @@ export function useChatState() {
     sendError,
     saveCredentials,
     clearCredentials,
+    clearAllData,
     createChat,
     setActiveChatId,
     sendMessage,

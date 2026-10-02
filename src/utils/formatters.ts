@@ -24,18 +24,23 @@ export function cleanPhoneNumber(raw: string): string {
 }
 
 /**
- * Converts a phone number to GREEN-API chatId format (e.g., "79991234567@c.us")
+ * Converts a phone number or raw ID to GREEN-API chatId format
+ * Supports standard phone numbers ("79991234567@c.us") and raw/MAX chatIds ("10000000")
  */
 export function phoneToChatId(phoneOrChatId: string): string {
   if (!phoneOrChatId) return '';
   const trimmed = phoneOrChatId.trim();
 
-  if (trimmed.includes('@c.us') || trimmed.includes('@g.us')) {
+  if (trimmed.includes('@')) {
     return trimmed;
   }
 
   const cleaned = cleanPhoneNumber(trimmed);
-  return `${cleaned}@c.us`;
+  if (cleaned.length >= 10) {
+    return `${cleaned}@c.us`;
+  }
+
+  return cleaned || trimmed;
 }
 
 /**
@@ -47,11 +52,13 @@ export function chatIdToPhone(chatId: string): string {
 }
 
 /**
- * Formats a phone number for user-friendly UI display
- * e.g., 79991234567 -> +7 (999) 123-45-67
+ * Formats a phone number or chatId for user-friendly UI display
+ * e.g., 79991234567 -> +7 (999) 123-45-67, or "10000000" -> "10000000"
  */
 export function formatPhoneDisplay(phoneOrChatId: string): string {
-  const digits = cleanPhoneNumber(chatIdToPhone(phoneOrChatId));
+  if (!phoneOrChatId) return '';
+  const trimmed = phoneOrChatId.trim();
+  const digits = cleanPhoneNumber(chatIdToPhone(trimmed));
 
   if (digits.length === 11 && digits.startsWith('7')) {
     const code = digits.slice(1, 4);
@@ -61,11 +68,11 @@ export function formatPhoneDisplay(phoneOrChatId: string): string {
     return `+7 (${code}) ${part1}-${part2}-${part3}`;
   }
 
-  if (digits.length > 6) {
+  if (digits.length >= 10) {
     return `+${digits}`;
   }
 
-  return phoneOrChatId;
+  return trimmed;
 }
 
 /**

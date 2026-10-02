@@ -86,8 +86,8 @@ export function useGreenApiPolling({
 
       // If an item was processed, return true so loop can quickly check next
       return true;
-    } catch (err: any) {
-      const errMsg = err?.message || 'Ошибка полинга очереди';
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : 'Ошибка полинга очереди';
       setPollingError(errMsg);
 
       // If rate limit 429 occurs, pause for 12 seconds

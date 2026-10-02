@@ -10,7 +10,6 @@ import {
   Trash2,
   Phone,
   Bookmark,
-  Paperclip,
   CheckCircle2,
 } from 'lucide-react';
 
@@ -35,7 +34,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 }) => {
   const [inputText, setInputText] = useState('');
   const [showMenu, setShowMenu] = useState(false);
-  const [showAttachmentHint, setShowAttachmentHint] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -209,26 +207,6 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({
 
       {/* Input Bar */}
       <form className="max-input-bar" onSubmit={handleSend}>
-        {/* Attachment Button */}
-        <div style={{ position: 'relative' }}>
-          <button
-            type="button"
-            className="icon-btn attachment-btn"
-            onClick={() => {
-              setShowAttachmentHint(true);
-              setTimeout(() => setShowAttachmentHint(false), 2500);
-            }}
-            title="Прикрепить файл"
-          >
-            <Paperclip size={20} />
-          </button>
-          {showAttachmentHint && (
-            <div className="attachment-tooltip">
-              По ТЗ поддерживаются только текстовые сообщения (метод sendMessage)
-            </div>
-          )}
-        </div>
-
         <textarea
           ref={inputRef}
           className="message-input"

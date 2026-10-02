@@ -15,6 +15,7 @@ import {
   Info,
   MoreVertical,
   LogOut,
+  Trash2,
 } from 'lucide-react';
 import { formatMessageTime, getInitials, formatPhoneDisplay } from '@/utils/formatters';
 
@@ -26,12 +27,13 @@ interface SidebarProps {
   onOpenAuthModal: () => void;
   onOpenInstanceInfo: () => void;
   onLogout?: () => void;
+  onClearAllData?: () => void;
   credentials: ApiCredentials | null;
   instanceStatus: string;
   isPolling: boolean;
   receivedCount: number;
   pollingError: string | null;
-  onManualPoll: () => Promise<any>;
+  onManualPoll: () => Promise<void | boolean>;
   theme: 'dark' | 'light';
   onToggleTheme: () => void;
 }
@@ -44,6 +46,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onOpenAuthModal,
   onOpenInstanceInfo,
   onLogout,
+  onClearAllData,
   credentials,
   instanceStatus,
   isPolling: _isPolling,
@@ -232,6 +235,22 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   >
                     <LogOut size={15} />
                     <span>Выйти</span>
+                  </button>
+                )}
+
+                {onClearAllData && (
+                  <button
+                    className="menu-item text-danger"
+                    onClick={() => {
+                      if (window.confirm('Очистить все локальные данные (ключи, чаты, историю) и выйти?')) {
+                        onClearAllData();
+                        setShowMenu(false);
+                      }
+                    }}
+                    title="Удаляет ключи и локальную историю из браузера"
+                  >
+                    <Trash2 size={15} />
+                    <span>Забыть данные и выйти</span>
                   </button>
                 )}
               </div>

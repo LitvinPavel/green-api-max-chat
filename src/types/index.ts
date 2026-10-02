@@ -56,7 +56,12 @@ export interface WaSettingsResponse {
   avatar?: string;
   name?: string;
   deviceType?: string;
-  [key: string]: any;
+  [key: string]: unknown;
+}
+
+export interface CheckAccountResponse {
+  existsWhatsapp?: boolean;
+  [key: string]: unknown;
 }
 
 export interface NotificationBody {

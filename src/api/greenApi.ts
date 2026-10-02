@@ -5,6 +5,7 @@ import {
   ReceiveNotificationResponse,
   DeleteNotificationResponse,
   NotificationBody,
+  CheckAccountResponse,
 } from '@/types';
 
 /**
@@ -14,6 +15,7 @@ import {
  * - sendMessage
  * - receiveNotification
  * - deleteNotification
+ * - checkAccount (verification)
  */
 
 function buildBaseUrl(credentials: ApiCredentials): string {
@@ -50,10 +52,43 @@ export class GreenApiClient {
   }
 
   /**
+   * Check if account exists by phone number
+   * Method: POST https://api.green-api.com/waInstance{{idInstance}}/checkAccount/{{apiTokenInstance}}
+   */
+  static async checkAccount(
+    credentials: ApiCredentials,
+    phoneNumber: number | string
+  ): Promise<CheckAccountResponse | null> {
+    try {
+      const url = `${buildBaseUrl(credentials)}/checkAccount/${credentials.apiTokenInstance.trim()}`;
+      const numericPhone =
+        typeof phoneNumber === 'number'
+          ? phoneNumber
+          : Number(phoneNumber.toString().replace(/\D/g, ''));
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ phoneNumber: numericPhone }),
+      });
+
+      if (!response.ok) return null;
+      const text = await response.text();
+      if (!text || text.trim() === '' || text.trim() === 'null') return null;
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
+
+  /**
    * Retrieve instance settings (contains account wid: phone@c.us)
    * Method: GET https://api.green-api.com/waInstance{{idInstance}}/getSettings/{{apiTokenInstance}}
    */
-  static async getSettings(credentials: ApiCredentials): Promise<{ wid?: string; [key: string]: any } | null> {
+  static async getSettings(credentials: ApiCredentials): Promise<{ wid?: string; [key: string]: unknown } | null> {
     try {
       const url = `${buildBaseUrl(credentials)}/getSettings/${credentials.apiTokenInstance.trim()}`;
       const response = await fetch(url, {
@@ -79,7 +114,7 @@ export class GreenApiClient {
   static async getContactInfo(
     credentials: ApiCredentials,
     chatId: string
-  ): Promise<{ name?: string; avatar?: string; phoneNumber?: number; [key: string]: any } | null> {
+  ): Promise<{ name?: string; avatar?: string; phoneNumber?: number; [key: string]: unknown } | null> {
     try {
       const url = `${buildBaseUrl(credentials)}/getContactInfo/${credentials.apiTokenInstance.trim()}`;
       const response = await fetch(url, {
