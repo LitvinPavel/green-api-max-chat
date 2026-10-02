@@ -25,24 +25,32 @@ export function useGreenApiPolling({
   const [pollingError, setPollingError] = useState<string | null>(null);
   const [receivedCount, setReceivedCount] = useState<number>(0);
 
-  const isMountedRef = useRef<boolean>(true);
-  const isLoopRunningRef = useRef<boolean>(false);
+  // Keep references to prevent recreating closures and triggering re-renders
+  const credentialsRef = useRef(credentials);
+  credentialsRef.current = credentials;
+
   const onMessageReceivedRef = useRef(onMessageReceived);
   onMessageReceivedRef.current = onMessageReceived;
 
+  // Track run generation to avoid race conditions with unmounted/stale loops
+  const runGenerationRef = useRef<number>(0);
+
   // Single step poll execution
   const pollOnce = useCallback(async (): Promise<boolean> => {
-    if (!credentials) return false;
+    const creds = credentialsRef.current;
+    if (!creds || !creds.idInstance || !creds.apiTokenInstance) return false;
 
     try {
       setLastCheckTime(new Date());
-      setPollingError(null);
 
       // 1. Receive notification from HTTP queue
-      const notification = await GreenApiClient.receiveNotification(credentials, 5);
+      const notification = await GreenApiClient.receiveNotification(creds, 5);
+
+      // On any successful response (even empty), clear previous network errors
+      setPollingError(null);
 
       if (!notification || !notification.body) {
-        // Queue is empty
+        // Queue is empty (200 OK with null) - normal expected state
         return false;
       }
 
@@ -63,73 +71,69 @@ export function useGreenApiPolling({
 
       // 3. Confirm processing by deleting notification from queue (crucial step in GREEN-API)
       if (notification.receiptId) {
-        await GreenApiClient.deleteNotification(credentials, notification.receiptId);
+        await GreenApiClient.deleteNotification(creds, notification.receiptId);
       }
 
-      // If there was an item, return true so loop can immediately fetch next in queue
+      // If an item was processed, return true so loop can quickly check next
       return true;
     } catch (err: any) {
       const errMsg = err?.message || 'Ошибка полинга очереди';
-      if (isMountedRef.current) {
-        setPollingError(errMsg);
-      }
-      // If 429 rate limit hit, pause 12 seconds to let GREEN-API quota reset
+      setPollingError(errMsg);
+
+      // If rate limit 429 occurs, pause for 12 seconds
       if (errMsg.includes('429')) {
         await new Promise((resolve) => setTimeout(resolve, 12000));
       }
       return false;
     }
-  }, [credentials]);
+  }, []);
 
   // Main polling loop
   useEffect(() => {
-    isMountedRef.current = true;
+    const creds = credentialsRef.current;
+    const hasKeys = Boolean(creds?.idInstance && creds?.apiTokenInstance);
 
-    if (!credentials || !enabled) {
+    if (!hasKeys || !enabled) {
       setIsPolling(false);
       return;
     }
 
-    let isCancelled = false;
-    isLoopRunningRef.current = true;
+    // Increment run generation so any older background loops stop immediately
+    const currentRun = ++runGenerationRef.current;
     setIsPolling(true);
 
-    let backoffDelay = 0;
-
     const runLoop = async () => {
-      while (!isCancelled && isMountedRef.current) {
+      while (runGenerationRef.current === currentRun) {
         try {
-          if (backoffDelay > 0) {
-            await new Promise((resolve) => setTimeout(resolve, backoffDelay));
-            backoffDelay = 0;
-          }
-
           const hadItem = await pollOnce();
 
-          // If item was found and processed, fetch next immediately.
-          // Otherwise wait 4000ms to stay comfortably within GREEN-API rate limits.
+          if (runGenerationRef.current !== currentRun) break;
+
+          // If an item was found, quickly fetch next in queue (500ms).
+          // Otherwise pause 4000ms to stay safely under GREEN-API rate limits.
           const delayMs = hadItem ? 500 : 4000;
           await new Promise((resolve) => setTimeout(resolve, delayMs));
-        } catch (err: any) {
-          const is429 = String(err?.message || '').includes('429');
-          backoffDelay = is429 ? 12000 : 5000;
-          await new Promise((resolve) => setTimeout(resolve, backoffDelay));
+        } catch {
+          if (runGenerationRef.current !== currentRun) break;
+          await new Promise((resolve) => setTimeout(resolve, 5000));
         }
       }
-      if (isMountedRef.current) {
+
+      // Only update state if this is still the active run
+      if (runGenerationRef.current === currentRun) {
         setIsPolling(false);
-        isLoopRunningRef.current = false;
       }
     };
 
     runLoop();
 
     return () => {
-      isCancelled = true;
-      isMountedRef.current = false;
-      isLoopRunningRef.current = false;
+      // Invalidate current run so old loop terminates without touching state
+      if (runGenerationRef.current === currentRun) {
+        runGenerationRef.current++;
+      }
     };
-  }, [credentials, enabled, pollOnce]);
+  }, [enabled, credentials?.idInstance, credentials?.apiTokenInstance, pollOnce]);
 
   return {
     isPolling,
