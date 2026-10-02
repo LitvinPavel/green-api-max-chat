@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { ApiCredentials, Chat, Message } from '@/types';
 import { GreenApiClient } from '@/api/greenApi';
 import {
@@ -86,13 +86,29 @@ export function useChatState() {
     }
   }, [activeChatId]);
 
+  const lastCheckTimestampRef = useRef<number>(0);
+
   // Check instance status on login/start
-  const checkStatus = useCallback(async (creds: ApiCredentials) => {
+  const checkStatus = useCallback(async (creds: ApiCredentials, force: boolean = false) => {
+    const now = Date.now();
+    // Don't re-check more often than once every 30 seconds unless forced
+    if (!force && now - lastCheckTimestampRef.current < 30000) {
+      return;
+    }
+    lastCheckTimestampRef.current = now;
+
     try {
       const res = await GreenApiClient.getStateInstance(creds);
-      setInstanceStatus(res.stateInstance);
-      return res.stateInstance;
+      if (res && res.stateInstance) {
+        setInstanceStatus(res.stateInstance);
+        return res.stateInstance;
+      }
     } catch (err: any) {
+      if (String(err?.message || '').includes('429')) {
+        // Rate limit exceeded - keep previous status if known or set rate-limited
+        setInstanceStatus((prev) => (prev && prev !== 'unknown' ? prev : 'rate-limited'));
+        return;
+      }
       setInstanceStatus('error');
       throw err;
     }

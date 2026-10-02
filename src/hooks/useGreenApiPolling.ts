@@ -89,18 +89,26 @@ export function useGreenApiPolling({
     isLoopRunningRef.current = true;
     setIsPolling(true);
 
+    let backoffDelay = 0;
+
     const runLoop = async () => {
       while (!isCancelled && isMountedRef.current) {
         try {
+          if (backoffDelay > 0) {
+            await new Promise((resolve) => setTimeout(resolve, backoffDelay));
+            backoffDelay = 0;
+          }
+
           const hadItem = await pollOnce();
 
           // If item was found and processed, fetch next immediately.
-          // Otherwise wait 2000ms before next long-poll check.
-          const delayMs = hadItem ? 300 : 2000;
+          // Otherwise wait 4000ms to stay comfortably within GREEN-API rate limits.
+          const delayMs = hadItem ? 500 : 4000;
           await new Promise((resolve) => setTimeout(resolve, delayMs));
-        } catch {
-          // In case of error, back off 5 seconds
-          await new Promise((resolve) => setTimeout(resolve, 5000));
+        } catch (err: any) {
+          const is429 = String(err?.message || '').includes('429');
+          backoffDelay = is429 ? 12000 : 5000;
+          await new Promise((resolve) => setTimeout(resolve, backoffDelay));
         }
       }
       if (isMountedRef.current) {

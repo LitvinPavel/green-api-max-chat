@@ -40,6 +40,9 @@ export class GreenApiClient {
       if (response.status === 401 || response.status === 403) {
         throw new Error('Неверный idInstance или apiTokenInstance. Проверьте учетные данные.');
       }
+      if (response.status === 429) {
+        throw new Error('Превышен лимит запросов тарифа GREEN-API (HTTP 429)');
+      }
       throw new Error(`Ошибка проверки статуса инстанса (HTTP ${response.status})`);
     }
 
@@ -98,6 +101,9 @@ export class GreenApiClient {
     if (!response.ok) {
       if (response.status === 401 || response.status === 403) {
         throw new Error('Ошибка авторизации (401/403): проверьте токен инстанса');
+      }
+      if (response.status === 429) {
+        throw new Error('429: Лимит запросов к GREEN-API');
       }
       throw new Error(`Ошибка получения уведомления (HTTP ${response.status})`);
     }

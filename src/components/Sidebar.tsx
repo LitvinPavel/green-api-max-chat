@@ -66,7 +66,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const statusColorClass =
     instanceStatus === 'authorized'
       ? 'online'
-      : instanceStatus === 'notAuthorized' || instanceStatus === 'starting' || instanceStatus === 'sleepMode'
+      : instanceStatus === 'notAuthorized' || instanceStatus === 'starting' || instanceStatus === 'sleepMode' || instanceStatus === 'rate-limited'
       ? 'warning'
       : instanceStatus === 'unknown'
       ? 'offline'
@@ -87,7 +87,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               />
               <span title={`Статус инстанса: ${instanceStatus}`}>
                 {credentials
-                  ? `id: ${credentials.idInstance}${instanceStatus !== 'authorized' && instanceStatus !== 'unknown' ? ` (${instanceStatus})` : ''}`
+                  ? `id: ${credentials.idInstance}${instanceStatus === 'rate-limited' ? ' (лимит 429)' : instanceStatus !== 'authorized' && instanceStatus !== 'unknown' ? ` (${instanceStatus})` : ''}`
                   : 'Не авторизован'}
               </span>
             </div>
