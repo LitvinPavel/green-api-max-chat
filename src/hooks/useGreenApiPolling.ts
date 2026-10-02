@@ -69,8 +69,13 @@ export function useGreenApiPolling({
       // If there was an item, return true so loop can immediately fetch next in queue
       return true;
     } catch (err: any) {
+      const errMsg = err?.message || 'Ошибка полинга очереди';
       if (isMountedRef.current) {
-        setPollingError(err.message || 'Ошибка полинга очереди');
+        setPollingError(errMsg);
+      }
+      // If 429 rate limit hit, pause 12 seconds to let GREEN-API quota reset
+      if (errMsg.includes('429')) {
+        await new Promise((resolve) => setTimeout(resolve, 12000));
       }
       return false;
     }
