@@ -125,19 +125,37 @@ export function useChatState() {
         setInstanceStatus(res.stateInstance);
       }
 
-      // Proactively fetch account profile info (phone, avatar, name)
+      // Proactively fetch account profile info (wid from getSettings, name and avatar from getContactInfo)
       try {
-        const wa = await GreenApiClient.getWaSettings(creds);
-        if (wa && (wa.phone || wa.avatar || wa.name)) {
+        let detectedPhone = creds.profile?.phone || '';
+        let detectedAvatar = creds.profile?.avatarUrl || '';
+        let detectedName = creds.profile?.name || '';
+
+        // 1. Get settings for wid
+        const settings = await GreenApiClient.getSettings(creds);
+        if (settings?.wid) {
+          detectedPhone = cleanPhoneNumber(settings.wid);
+        }
+
+        // 2. If wid is available, fetch contact info for name & avatar
+        if (detectedPhone) {
+          const contact = await GreenApiClient.getContactInfo(creds, `${detectedPhone}@c.us`);
+          if (contact) {
+            if (contact.name) detectedName = contact.name;
+            if (contact.avatar) detectedAvatar = contact.avatar;
+          }
+        }
+
+        if (detectedPhone || detectedAvatar || detectedName) {
           setCredentialsState((prev) => {
             if (!prev) return prev;
             return {
               ...prev,
               profile: {
                 ...prev.profile,
-                phone: wa.phone ? cleanPhoneNumber(wa.phone) : prev.profile?.phone,
-                avatarUrl: wa.avatar || prev.profile?.avatarUrl,
-                name: wa.name || prev.profile?.name,
+                phone: detectedPhone || prev.profile?.phone,
+                avatarUrl: detectedAvatar || prev.profile?.avatarUrl,
+                name: detectedName || prev.profile?.name,
                 tariff: prev.profile?.tariff || 'MAX_DEVELOPER',
                 expirationDate: prev.profile?.expirationDate || '01.01.2030',
               },

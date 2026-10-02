@@ -59,6 +59,7 @@ export const InstanceInfoModal: React.FC<InstanceInfoModalProps> = ({
   const apiUrl = credentials?.apiUrl || 'https://api.green-api.com';
   const token = credentials?.apiTokenInstance || '';
   const phone = credentials?.profile?.phone || '';
+  const profileName = credentials?.profile?.name || '';
   const tariff = credentials?.profile?.tariff || 'MAX_DEVELOPER';
   const expirationDate = credentials?.profile?.expirationDate || '01.01.2030';
   const isAuthorized = instanceStatus === 'authorized';
@@ -74,7 +75,7 @@ export const InstanceInfoModal: React.FC<InstanceInfoModalProps> = ({
         <div className="modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <h3 style={{ margin: 0, fontSize: '17px', fontWeight: 600 }}>
-              {idInstance !== '—' ? idInstance : 'Инстанс'}
+              {profileName || (idInstance !== '—' ? idInstance : 'Аккаунт')}
             </h3>
             <ShieldCheck size={18} color="var(--max-primary)" />
             <span className="max-purple-badge">MAX</span>

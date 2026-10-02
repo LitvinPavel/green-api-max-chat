@@ -107,6 +107,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       : 'error';
 
   const profilePhone = credentials?.profile?.phone;
+  const profileName = credentials?.profile?.name;
   const profileAvatar = credentials?.profile?.avatarUrl;
 
   return (
@@ -116,14 +117,18 @@ export const Sidebar: React.FC<SidebarProps> = ({
         <div
           className="max-user-profile"
           onClick={onOpenInstanceInfo}
-          title="Нажмите, чтобы просмотреть карточку инстанса"
+          title="Нажмите, чтобы просмотреть карточку аккаунта"
         >
           <div className="max-user-avatar-wrap">
             {profileAvatar ? (
               <img src={profileAvatar} alt="Profile" className="max-user-avatar-img" />
             ) : (
               <div className="max-user-avatar-placeholder">
-                {profilePhone ? getInitials(profilePhone) : 'M'}
+                {profileName
+                  ? getInitials(profileName)
+                  : profilePhone
+                  ? getInitials(profilePhone)
+                  : 'M'}
               </div>
             )}
             <span
@@ -135,11 +140,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
           <div className="max-user-info">
             <div className="max-user-title-row">
               <span className="max-user-title">
-                {profilePhone
-                  ? formatPhoneDisplay(profilePhone)
-                  : credentials?.idInstance
-                  ? `Инстанс ${credentials.idInstance}`
-                  : 'MAX Messenger'}
+                {profileName ||
+                  (profilePhone
+                    ? formatPhoneDisplay(profilePhone)
+                    : credentials?.idInstance || 'MAX Messenger')}
               </span>
               <span className="max-purple-badge">MAX</span>
             </div>
@@ -154,9 +158,12 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   ? 'В сети'
                   : instanceStatus}
               </span>
-              {credentials?.idInstance && (
+              {/* Only show secondary ID or phone if not already used as main title */}
+              {profileName && profilePhone ? (
+                <span className="max-id-text">• {formatPhoneDisplay(profilePhone)}</span>
+              ) : profilePhone && credentials?.idInstance ? (
                 <span className="max-id-text">• id: {credentials.idInstance}</span>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

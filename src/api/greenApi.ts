@@ -5,7 +5,6 @@ import {
   ReceiveNotificationResponse,
   DeleteNotificationResponse,
   NotificationBody,
-  WaSettingsResponse,
 } from '@/types';
 
 /**
@@ -51,13 +50,12 @@ export class GreenApiClient {
   }
 
   /**
-   * Retrieve WhatsApp/MAX account settings (phone number, avatar, device, state)
-   * Method: GET https://api.green-api.com/waInstance{{idInstance}}/getWaSettings/{{apiTokenInstance}}
-   * Returns null safely if not supported or error
+   * Retrieve instance settings (contains account wid: phone@c.us)
+   * Method: GET https://api.green-api.com/waInstance{{idInstance}}/getSettings/{{apiTokenInstance}}
    */
-  static async getWaSettings(credentials: ApiCredentials): Promise<WaSettingsResponse | null> {
+  static async getSettings(credentials: ApiCredentials): Promise<{ wid?: string; [key: string]: any } | null> {
     try {
-      const url = `${buildBaseUrl(credentials)}/getWaSettings/${credentials.apiTokenInstance.trim()}`;
+      const url = `${buildBaseUrl(credentials)}/getSettings/${credentials.apiTokenInstance.trim()}`;
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -65,15 +63,37 @@ export class GreenApiClient {
         },
       });
 
-      if (!response.ok) {
-        return null;
-      }
-
+      if (!response.ok) return null;
       const text = await response.text();
-      if (!text || text.trim() === '' || text.trim() === 'null') {
-        return null;
-      }
+      if (!text || text.trim() === '' || text.trim() === 'null') return null;
+      return JSON.parse(text);
+    } catch {
+      return null;
+    }
+  }
 
+  /**
+   * Retrieve contact/account profile information (name, avatar, phone)
+   * Method: POST https://api.green-api.com/waInstance{{idInstance}}/getContactInfo/{{apiTokenInstance}}
+   */
+  static async getContactInfo(
+    credentials: ApiCredentials,
+    chatId: string
+  ): Promise<{ name?: string; avatar?: string; phoneNumber?: number; [key: string]: any } | null> {
+    try {
+      const url = `${buildBaseUrl(credentials)}/getContactInfo/${credentials.apiTokenInstance.trim()}`;
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({ chatId }),
+      });
+
+      if (!response.ok) return null;
+      const text = await response.text();
+      if (!text || text.trim() === '' || text.trim() === 'null') return null;
       return JSON.parse(text);
     } catch {
       return null;
